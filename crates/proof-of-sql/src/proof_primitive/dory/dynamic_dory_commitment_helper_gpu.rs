@@ -76,12 +76,12 @@ pub(super) fn compute_dynamic_dory_commitments(
                 (0..committable_columns.len())
             )
             .map(|i| {
-                let sub_slice = signed_sub_commits[i..]
-                    .iter()
-                    .step_by(committable_columns.len())
-                    .take(num_commits);
+                let sub_slice: Vec<_> =
+                    if_rayon!((0..num_commits).into_par_iter(), (0..num_commits))
+                        .map(|j| signed_sub_commits[i + j * committable_columns.len()])
+                        .collect();
                 DynamicDoryCommitment(pairings::multi_pairing(
-                    sub_slice,
+                    &sub_slice,
                     &Gamma_2[gamma_2_offset..gamma_2_offset + num_commits],
                 ))
             })
